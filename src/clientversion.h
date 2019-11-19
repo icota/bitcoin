@@ -43,6 +43,7 @@ static const int CLIENT_VERSION =
 
 extern const std::string CLIENT_NAME;
 extern const std::string RUSTY_CLIENT_NAME;
+extern const std::string RUSTY_LIGHTNING_CLIENT_NAME;
 extern const std::string CLIENT_BUILD;
 
 

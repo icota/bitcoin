@@ -3,18 +3,26 @@
 // as distributed by their linux distribution, so in generally cannot "fix" the
 // warnings. Thus, we should disable such useless lints below.
 #![allow(deprecated)]
+#![feature(try_from)]
+#![feature(integer_atomics)]
 
 extern crate bitcoin;
 extern crate bitcoin_hashes;
 extern crate libc;
+extern crate lightning;
+extern crate bitcoin_bech32;
+extern crate core;
 
 #[cfg(not(test))] mod bridge;
 #[cfg(test)] pub mod test_bridge;
-#[cfg(test)] pub use test_bridge as bridge;
+//#[cfg(test)] pub use test_bridge as bridge;
 use bridge::*;
 
 mod dns_headers;
 mod rest_downloader;
+mod core_lightning;
+mod lightning_socket_handler;
+// mod chain_monitor;
 
 // Our P2P socket handler currently only supports poll(), so we stub out all the P2P client for
 // Windows with dumy init/stop functions.

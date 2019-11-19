@@ -312,6 +312,7 @@ libbitcoin_server_a_SOURCES = \
   rpc/net.cpp \
   rpc/rawtransaction.cpp \
   rpc/server.cpp \
+  rpc/lightning.cpp \
   script/sigcache.cpp \
   shutdown.cpp \
   timedata.cpp \
@@ -379,7 +380,9 @@ LIBBITCOIN_RUSTY_SRCS= \
   rusty/src/dns_headers.rs \
   rusty/src/rest_downloader.rs \
   rusty/src/p2p_addrs.rs rusty/src/p2p_client.rs \
-  rusty/src/p2p_socket_handler.rs
+  rusty/src/p2p_socket_handler.rs \
+  rusty/src/core_lightning.rs \
+  rusty/src/lightning_socket_handler.rs
 
 LIBBITCOIN_RUSTY_TEST_SRCS= \
   rusty/src/test_bridge.rs
@@ -405,14 +408,24 @@ rusty/libbitcoin.rlib: rusty/rust-bitcoin/src/lib.rs $(wildcard rusty/rust-bitco
 	$(RUSTC) --crate-name bitcoin $< --crate-type=rlib -g -O -C overflow-checks=on -C panic=unwind --out-dir $(@D) --extern bech32=$(@D)/libbech32.rlib --extern bitcoin_hashes=$(@D)/libbitcoin_hashes.rlib --extern secp256k1=$(@D)/libsecp256k1.rlib && \
 	touch $@
 
+rusty/liblightning.rlib: rusty/libbitcoin.rlib
+rusty/liblightning.rlib: rusty/rust-lightning/lightning/src/lib.rs $(wildcard rusty/rust-lightning/lightning/src/*.rs) $(wildcard rusty/rust-lightning/lightning/src/*/*.rs) $(wildcard rusty/rust-lightning/src/*/*/*.rs)
+	$(RUSTC) --crate-name lightning $< --crate-type=rlib -g -O -C overflow-checks=on -C panic=unwind --out-dir $(@D) -L rusty && \
+	touch $@
+
+rusty/libbitcoin-bech32.rlib: rusty/libbech32.rlib
+rusty/libbitcoin-bech32.rlib: rusty/rust-bech32-bitcoin/src/lib.rs
+	$(RUSTC) --crate-name bitcoin_bech32 $< --crate-type=rlib -g -O -C overflow-checks=on -C panic=unwind --out-dir $(@D) -L rusty && \
+	touch $@
+
 # We force overflow checks on so that any integer overflows result in a panic
 # instead of, eg, attempting to alloc 4GB of memory (though we will catch such
 # an alloc and refuse it, generating a panic instead).
 # Also force panics to unwind (instead of calling abort()) as we want to catch
 # panics in the Rust threads and simply close the thread, instead of bringing
 # down the rest of Bitcoin Core.
-$(LIBBITCOIN_RUSTY): $(LIBBITCOIN_RUSTY_SRCS) rusty/libbitcoin.rlib rusty/liblibc.rlib
-	$(RUSTC) --crate-name rusty $< --target=$(RUST_TARGET) --crate-type=staticlib --emit=link -g -O -C lto=on -C overflow-checks=on -C panic=unwind --out-dir $(@D) -L dependency=$(@D) --extern libc=$(@D)/liblibc.rlib --extern bitcoin_hashes=$(@D)/libbitcoin_hashes.rlib --extern bitcoin=$(@D)/libbitcoin.rlib
+$(LIBBITCOIN_RUSTY): $(LIBBITCOIN_RUSTY_SRCS) rusty/libbitcoin.rlib rusty/liblibc.rlib rusty/liblightning.rlib rusty/libbitcoin-bech32.rlib
+	$(RUSTC) --crate-name rusty $< --target=$(RUST_TARGET) --crate-type=staticlib --emit=link -g -C lto=on -C overflow-checks=on -C panic=unwind --out-dir $(@D) -L $(@D) --extern libc=$(@D)/liblibc.rlib
 	touch $@
 
 # crypto primitives library

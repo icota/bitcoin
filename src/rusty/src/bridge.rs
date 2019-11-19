@@ -1,10 +1,11 @@
-use std::ffi::{c_void, CString};
+use std::ffi::{c_void, CString, CStr};
 use std::ptr;
 use std::io::Cursor;
 
 use bitcoin::blockdata::block::BlockHeader;
 use bitcoin::consensus::Encodable;
 use bitcoin::util::uint::Uint256;
+use std::os::raw::c_char;
 
 #[inline]
 pub fn slice_to_u64_le(slice: &[u8]) -> u64 {
@@ -88,6 +89,8 @@ extern "C" {
 
     /// Serializes the header pointed to by the CBlockIndex* into eighty_bytes_dest.
     fn rusty_SerializeIndex(index: *const c_void, eighty_bytes_dest: *mut u8);
+
+    fn rusty_GetNetworkIDString() -> *const c_char;
 
     /// Given a CBlockIndex* pointer, gets a pointer/length pair for the serialized block,
     /// returning an opaque resource pointer, which must be deallocated (invalidating the
@@ -251,6 +254,12 @@ impl BlockIndex {
         ser
     }
 
+    pub fn network_id() -> String {
+        unsafe {
+            CStr::from_ptr(rusty_GetNetworkIDString()).to_string_lossy().into_owned()
+        }
+    }
+
     /// Gets the full, serialized, block, in witness form
     pub fn block_bytes(&self) -> Vec<u8> {
         let mut len: u64 = 0;
@@ -379,6 +388,9 @@ extern "C" {
 
     /// Gets a u64 less than the given max out of a Random Context generated with rusty_InitRandContext()
     fn rusty_GetRandRange(rand_context: *mut c_void, range: u64) -> u64;
+
+    /// Gets len random bytes out of a Random Context generated with rusty_InitRandContext()
+    fn rusty_GetRandThirtyTwoBytes(rand_context: *mut c_void) -> ThirtyTwoBytes;
 }
 
 pub struct RandomContext {
@@ -399,6 +411,10 @@ impl RandomContext {
     pub fn randrange(&mut self, range: u64) -> u64 {
         assert!(range > 0);
         unsafe { rusty_GetRandRange(self.index, range) }
+    }
+
+    pub fn randthirtytwobytes(&mut self) -> Uint256 {
+        unsafe { rusty_GetRandThirtyTwoBytes(self.index) }.to_uint_le()
     }
 }
 impl Drop for RandomContext {

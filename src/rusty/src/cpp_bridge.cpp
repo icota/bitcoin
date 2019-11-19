@@ -190,6 +190,11 @@ void rusty_SerializeIndex(const void* pindexvoid, unsigned char* eighty_bytes_de
     memcpy(eighty_bytes_dest, ser.data(), 80);
 }
 
+const char* rusty_GetNetworkIDString() {
+    auto network = Params().NetworkIDString().c_str();
+    return network;
+}
+
 void* rusty_GetBlockData(const void* pindexvoid, const unsigned char **data, uint64_t *datalen) {
     const CBlockIndex *pindex = (const CBlockIndex*) pindexvoid;
     std::vector<uint8_t> *res = new std::vector<uint8_t>();
@@ -256,6 +261,14 @@ uint64_t rusty_GetRandU64(void* contextvoid) {
 uint64_t rusty_GetRandRange(void* contextvoid, uint64_t range) {
     FastRandomContext* ctx = (FastRandomContext*) contextvoid;
     return ctx->randrange(range);
+}
+
+ThirtyTwoBytes rusty_GetRandThirtyTwoBytes(void* contextvoid) {
+    FastRandomContext* ctx = (FastRandomContext*) contextvoid;
+    ThirtyTwoBytes ret;
+    uint256 work = ctx->rand256();
+    memcpy(ret.val, work.begin(), 32);
+    return ret;
 }
 
 void rusty_LogLine(const unsigned char* str, bool debug) {
