@@ -130,6 +130,8 @@ BitcoinMobileGUI::BitcoinMobileGUI(interfaces::Node& node, const PlatformStyle *
     connect(this->rootObject(), SIGNAL(copyToClipboard(QString)), this, SLOT(setClipboard(QString)));
     connect(this->rootObject(), SIGNAL(changeUnit(int)), this, SLOT(setDisplayUnit(int)));
 
+    connect(engine, &QQmlEngine::quit, qApp, &QApplication::quit);
+
     m_walletPane = this->rootObject()->findChild<QObject*>("walletPane");
 
     if (m_walletPane) {

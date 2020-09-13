@@ -181,7 +181,9 @@ BitcoinApplication::BitcoinApplication(interfaces::Node& node):
     optionsModel(nullptr),
     clientModel(nullptr),
     window(nullptr),
+#ifndef MOBILE_GUI
     pollShutdownTimer(nullptr),
+#endif
     returnValue(0),
     platformStyle(nullptr)
 {
@@ -324,8 +326,9 @@ void BitcoinApplication::requestShutdown()
     // Unsetting the client model can cause the current thread to wait for node
     // to complete an operation, like wait for a RPC execution to complete.
     window->setClientModel(nullptr);
+#ifndef MOBILE_GUI
     pollShutdownTimer->stop();
-
+#endif
     delete clientModel;
     clientModel = nullptr;
 
