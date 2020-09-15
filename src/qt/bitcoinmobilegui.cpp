@@ -153,6 +153,14 @@ BitcoinMobileGUI::BitcoinMobileGUI(interfaces::Node& node, const PlatformStyle *
     subscribeToCoreSignals();
 }
 
+void BitcoinMobileGUI::detectShutdown()
+{
+    if (m_node.shutdownRequested())
+    {
+        qApp->quit();
+    }
+}
+
 void BitcoinMobileGUI::setClientModel(ClientModel *clientModel)
 {
     this->m_clientModel = clientModel;
